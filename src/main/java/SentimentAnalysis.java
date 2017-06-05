@@ -6,9 +6,7 @@ import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
-import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
-import org.omg.CosNaming.NamingContextExtPackage.StringNameHelper;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -23,6 +21,11 @@ public class SentimentAnalysis {
         public Map<String, String> emotionLibiary = new HashMap<String, String>();
         //store libiary for map() to use
 
+        //use enum to debug see below
+        enum debug{
+            debugtest,
+            debugtest2
+        };
 
         @Override
         public void setup(Context context) throws IOException{
@@ -39,8 +42,14 @@ public class SentimentAnalysis {
             String line = br.readLine();
             while(line!=null){
                 String[] word_feeling = line.split("\t");
-                emotionLibiary.put(word_feeling[0], word_feeling[1]);
-                br.readLine();
+                emotionLibiary.put(word_feeling[0].toLowerCase(), word_feeling[1]);
+                /*
+                 Mistake i made : stuck on map 0% reduce 0%
+                 error --> br.readLine();
+                 correction --> line=br.readLine();
+                  */
+
+                line=br.readLine();
             }
 
             br.close();
@@ -65,8 +74,9 @@ public class SentimentAnalysis {
             //split into words
                 //value is one of the line read from data
 
-            String[] words = value.toString().split("\\s+");
-
+//            String[] words = value.toString().trim().split("\\s+");
+            String line = value.toString().trim();
+            String[] words = line.split("\\s+");
             //look up in sentiment library
                 /*
                 create sentiment library only once in setup()
@@ -85,13 +95,25 @@ public class SentimentAnalysis {
                         Mapper<Object, Text, Text, IntWritable>
                             output is the "Text, IntWritable"
                      */
+
+                    //write result in key-value pair
                     context.write(new Text(emotionLibiary.get(word.toLowerCase())), new IntWritable(1));
 
                 }
+                // How to debug
+                // count how many time word has appeared
+                // show what the word is as it count
+                // sampleGroup is a group name as they count
+                // and it has a limit 120?
+                //context.getCounter("sampleGroup",word).increment(1);
 
             }
 
-            //write result in key-value pair
+
+            // How to debug
+            // count how many time debugtest has appeared
+            context.getCounter(debug.debugtest).increment(1);
+
 
 
         }
